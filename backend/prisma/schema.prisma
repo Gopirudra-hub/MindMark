@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  bookmarks Bookmark[]
+}
+
+model Bookmark {
+  id             String        @id @default(uuid())
+  title          String
+  url            String
+  content        String?       @db.Text
+  summary        String?       @db.Text
+  detailedSummary String?      @db.Text
+  keyConcepts    String?       @db.Text
+  categoryId     String?
+  category       Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  lastReviewedAt DateTime?
+  nextReviewAt   DateTime?
+  tags           BookmarkTag[]
+  questions      Question[]
+  quizAttempts   QuizAttempt[]
+
+  @@index([categoryId])
+  @@index([nextReviewAt])
+}
+
+model Tag {
+  id        String        @id @default(uuid())
+  name      String        @unique
+  bookmarks BookmarkTag[]
+}
+
+model BookmarkTag {
+  bookmarkId String
+  tagId      String
+  bookmark   Bookmark @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([bookmarkId, tagId])
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  bookmarkId    String
+  bookmark      Bookmark     @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  questionText  String       @db.Text
+  type          QuestionType @default(mcq)
+  correctAnswer String       @db.Text
+  options       Json?
+  explanation   String?      @db.Text
+  difficulty    Difficulty   @default(medium)
+  userAnswers   UserAnswer[]
+
+  @@index([bookmarkId])
+}
+
+enum QuestionType {
+  mcq
+  short
+  scenario
+  flashcard
+}
+
+enum Difficulty {
+  easy
+  medium
+  hard
+}
+
+model QuizAttempt {
+  id             String       @id @default(uuid())
+  bookmarkId     String
+  bookmark       Bookmark     @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  score          Float
+  totalQuestions Int
+  timeTaken      Int          // in seconds
+  attemptedAt    DateTime     @default(now())
+  userAnswers    UserAnswer[]
+
+  @@index([bookmarkId])
+  @@index([attemptedAt])
+}
+
+model UserAnswer {
+  id             String      @id @default(uuid())
+  attemptId      String
+  attempt        QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedAnswer String      @db.Text
+  isCorrect      Boolean
+
+  @@index([attemptId])
+  @@index([questionId])
+}
