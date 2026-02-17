@@ -1,4 +1,4 @@
-# Bookmart - AI Bookmark Learning & Retention System
+# MindMark - AI Bookmark Learning & Retention System
 
 An intelligent bookmark management system that extracts content, generates AI-powered summaries and questions, tracks quiz attempts, schedules revision, and provides performance analytics.
 
